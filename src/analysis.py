@@ -1,57 +1,43 @@
 import pandas as pd
 
 class AnalizadorVentas:
-    def __init__(self, path):
-        """
-        Inicializa el analizador con la ruta del archivo Excel.
-        """
-        self.path = path
-        self.df = None
+    def __init__(self, ruta_excel):
+        self.ruta = ruta_excel
 
     def realizar_calculos(self):
-        """
-        Carga los datos y realiza los cálculos financieros y estadísticos.
-        """
-        # Cargar el Excel
-        self.df = pd.read_excel(self.path)
-        
-        # --- CÁLCULOS OBLIGATORIOS ---
-        
-        # 8 y 9. Conteos básicos
-        total_ventas_cant = len(self.df)
-        clientes_unicos = self.df['Cliente'].nunique()
-        
-        # 4. Precio de ventas sin IGV por sede
-        ventas_sede = self.df.groupby('Sede')['Venta_sin_IGV'].sum()
-        
-        # 5. Modelos de vehículos más vendidos (top 5)
-        top_modelos = self.df['Modelo'].value_counts().head(5)
-        
-        # 6. Canales con más ventas
-        canales_ventas = self.df['Canal'].value_counts()
-        
-        # 10. Totales Generales (Sumas globales)
-        total_sin_igv = self.df['Venta_sin_IGV'].sum()
-        total_con_igv = self.df['Venta_con_IGV'].sum()
-        
-        # 7. Segmento de clientes por precio (Ejemplo simple de segmentación)
-        # Esto servirá para el gráfico circular más adelante
-        def segmentar(monto):
-            if monto > 18000: return 'Premium'
-            if monto > 14000: return 'Estándar'
-            return 'Económico'
-        
-        self.df['Segmento'] = self.df['Venta_sin_IGV'].apply(segmentar)
-        segmentos = self.df['Segmento'].value_counts()
+        try:
+            # 1. Carga de hojas
+            df_ventas = pd.read_excel(self.ruta, sheet_name='VENTAS')
+            df_vehiculos = pd.read_excel(self.ruta, sheet_name='VEHICULOS')
+        except Exception as e:
+            raise Exception(f"Error al leer las hojas del Excel: {str(e)}")
 
-        # Retornamos el diccionario con los nombres exactos que usa main.py
+        # 2. Limpieza de nombres de columnas (quitar espacios y poner _)
+        df_ventas.columns = [c.strip().replace(' ', '_') for c in df_ventas.columns]
+        df_vehiculos.columns = [c.strip().replace(' ', '_') for c in df_vehiculos.columns]
+
+        # 3. Estandarización de la llave de unión (QUITAR TILDES)
+        # Forzamos que en ambas tablas se llame 'ID_Vehiculo'
+        df_ventas = df_ventas.rename(columns={'ID_Vehículo': 'ID_Vehiculo'})
+        df_vehiculos = df_vehiculos.rename(columns={'ID_Vehículo': 'ID_Vehiculo'})
+
+        # 4. UNIÓN DE TABLAS (Merge)
+        df = pd.merge(df_ventas, df_vehiculos, on='ID_Vehiculo', how='left')
+
+        # 5. Mapeo de columnas según tu archivo real
+        col_venta = 'Precio_Venta_sin_IGV'
+        col_igv = 'Precio_Venta_Real'
+        col_canal = 'Canal'
+        col_sede = 'Sede'
+        col_modelo = 'MODELO'
+
+        # 6. Retorno de resultados (Incluyendo 'canales' para evitar el error crítico)
         return {
-            "total_ventas": total_ventas_cant,
-            "clientes": clientes_unicos,
-            "por_sede": ventas_sede,
-            "top_5": top_modelos,
-            "canales": canales_ventas,
-            "segmentos": segmentos,
-            "total_sin_igv": total_sin_igv, # Nombre corregido
-            "total_con_igv": total_con_igv  # Nombre corregido
+            'total_ventas': len(df),
+            'total_sin_igv': df[col_venta].sum(),
+            'total_con_igv': df[col_igv].sum(),
+            'por_sede': df.groupby(col_sede)[col_venta].sum(),
+            'top_5': df[col_modelo].value_counts().head(5),
+            'canales': df[col_canal].value_counts(), # <--- Solución al error 'canales'
+            'datos_completos': df
         }
