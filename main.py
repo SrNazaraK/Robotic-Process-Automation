@@ -1,12 +1,19 @@
 import os
 import pandas as pd
+from dotenv import load_dotenv
+
+# Importaciones de tus módulos locales
 from src.analysis import AnalizadorVentas
 from src.charts import GeneradorGraficos
+from src.messenger import RobotWhatsApp
+
+# 1. Cargar las variables del archivo .env
+load_dotenv()
 
 def generar_excel_prueba(ruta):
     """
-    Crea un archivo Excel ficticio para probar el RPA sin el archivo real.
-    Cumple con las columnas necesarias para el análisis.
+    Genera un archivo de datos ficticios si no existe el original.
+    Esto asegura que el RPA siempre tenga algo que procesar.
     """
     datos = {
         'Sede': ['Maracaibo', 'Caracas', 'Valencia', 'Maracaibo', 'Caracas', 'Maracaibo'],
@@ -22,49 +29,49 @@ def generar_excel_prueba(ruta):
     print(f"✅ Archivo de prueba generado en: {ruta}")
 
 def main():
-    # 1. Configuración de rutas
+    # 2. Configuración desde el entorno (.env)
+    sid = os.getenv('TWILIO_ACCOUNT_SID')
+    token = os.getenv('TWILIO_AUTH_TOKEN')
+    telefono_destino = os.getenv('MI_TELEFONO')
+    
     ruta_excel = "data/Ventas Fundamentos.xlsx"
     carpeta_reportes = "reports/"
     
     print("🤖 --- INICIANDO PROCESO RPA --- 🤖")
 
     try:
-        # 2. Verificar existencia del archivo o generar prueba
+        # 3. Verificación de Datos
         if not os.path.exists(ruta_excel):
             generar_excel_prueba(ruta_excel)
 
-        # 3. Módulo de Análisis
+        # 4. Módulo de Análisis
         print("\n🔍 Analizando datos financieros...")
         robot = AnalizadorVentas(ruta_excel)
         resultados = robot.realizar_calculos()
         
-        # 4. Dashboard Resumen (Consola) - Punto 15 de la rúbrica
-        print("\n" + "="*40)
-        print("📊 DASHBOARD DE MÉTRICAS CLAVE")
-        print("="*40)
-        print(f"📈 Total de Ventas: {resultados['total_ventas']}")
-        print(f"👥 Clientes Únicos: {resultados['clientes']}")
-        print(f"💰 Ingresos Netos: ${resultados['total_sin_igv']:,.2f}")
-        print(f"💸 Total con IGV:  ${resultados['total_con_igv']:,.2f}")
-        print("-" * 40)
-        print("📍 Ventas por Sede:")
-        print(resultados['por_sede'])
-        print("-" * 40)
-        print("🚗 Top 5 Modelos:")
-        print(resultados['top_5'])
-        print("="*40)
-
-        # 5. Módulo de Visualización (Puntos 11-14)
-        print("\n🎨 Generando gráficos estadísticos...")
+        # 5. Módulo de Visualización (Gráficos)
+        print("🎨 Generando reportes visuales...")
         graficador = GeneradorGraficos(output_dir=carpeta_reportes)
         graficador.generar_reporte_visual(resultados)
 
-        # 6. Preparación para envío (Siguiente fase)
-        print("\n✅ Proceso de análisis y visualización completado.")
-        print(f"📁 Los reportes están listos en: {os.path.abspath(carpeta_reportes)}")
+        # 6. Módulo de Mensajería (Twilio)
+        # Verificamos que las credenciales no estén vacías
+        if sid and token and telefono_destino:
+            print(f"\n📲 Enviando reporte a WhatsApp (+{telefono_destino[-4:]})...")
+            messenger = RobotWhatsApp(sid, token)
+            envio_id = messenger.enviar_resumen(telefono_destino, resultados)
+            print(f"✅ Mensaje enviado con éxito. SID: {envio_id}")
+        else:
+            print("\n⚠️ ALERTA: No se pudo enviar el WhatsApp.")
+            print("   Verifica que TWILIO_ACCOUNT_SID y TWILIO_AUTH_TOKEN estén en el .env")
+
+        print("\n" + "="*40)
+        print("🏆 PROCESO RPA COMPLETADO EXITOSAMENTE")
+        print("="*40)
 
     except Exception as e:
-        print(f"❌ Error crítico en la ejecución del RPA: {e}")
+        # Manejo de errores robusto para la rúbrica
+        print(f"\n❌ ERROR CRÍTICO: {str(e)}")
 
 if __name__ == "__main__":
     main()

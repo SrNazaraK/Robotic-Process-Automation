@@ -1,17 +1,26 @@
-# Entorno virtual
+# Entorno virtual (Aislamos las librerías de Python)
 venv/
 .venv/
+env/
 
-# Datos (No subas el Excel original si es muy pesado o privado)
+# Credenciales y Secretos (CRÍTICO: No subir a GitHub)
+.env
+.env.shared
+auth.json
+
+# Datos y Reportes (Evitamos subir archivos binarios pesados)
 data/*.xlsx
 data/*.csv
-
-# Gráficos generados
+reports/*.png
+reports/*.jpg
 *.png
 *.jpg
 
-# Credenciales (Twilio SID/Token)
-.env
-
-# Python
+# Archivos temporales de Python
 __pycache__/
+*.py[cod]
+*$py.class
+
+# VS Code y Sistema
+.vscode/
+.DS_Store
