@@ -15,6 +15,11 @@ El sistema automatiza el flujo completo de gestión de datos: desde la extracci�
 
 ---
 
+### 📊 Sobre la Data
+El sistema está optimizado para procesar el archivo `Ventas - Fundamentos.xlsx`, leyendo específicamente la hoja **VENTAS** para los cálculos financieros y generación de KPIs.
+
+---
+
 ## 🛠️ Configuración y Despliegue (IMPORTANTE)
 
 Para garantizar la seguridad y la portabilidad del proyecto, se ha implementado un sistema de **Variables de Entorno**. 
