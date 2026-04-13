@@ -1,0 +1,17 @@
+# Entorno virtual
+venv/
+.venv/
+
+# Datos (No subas el Excel original si es muy pesado o privado)
+data/*.xlsx
+data/*.csv
+
+# Gráficos generados
+*.png
+*.jpg
+
+# Credenciales (Twilio SID/Token)
+.env
+
+# Python
+__pycache__/
